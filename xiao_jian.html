@@ -2,39 +2,39 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>优化版躲避陨石</title>
     <style>
         /* 游戏区域样式 */
         #gameArea {
-            width: 600px;
-            height: 400px;
+            width: 90vw;
+            height: calc(90vw * (4 / 6));
             border: 2px solid black;
             margin: 0 auto;
             position: relative;
             overflow: hidden;
-			background-image: url('image.png'); /* 这里将 'your_image.jpg' 替换为你实际的图片文件名，确保图片和HTML文件在同一目录下，或者使用正确的路径 */
-            background-size: cover; /* 调整背景图片的尺寸以覆盖整个区域 */
+            background-size: cover;
         }
 
         /* 玩家样式 */
         #player {
-            width: 30px;
-            height: 30px;
+            width: 5vw;
+            height: 5vw;
             background-color: blue;
             position: absolute;
-            top: 350px;
-            left: 285px;
-            transition: left 0.2s ease; /* 添加过渡效果 */
+            top: calc(90vw * (4 / 6) - 5vw);
+            left: calc(45vw - 2.5vw);
+            transition: left 0.2s ease;
         }
 
         /* 陨石样式 */
-       .meteor {
-            width: 20px;
-            height: 20px;
+        .meteor {
+            width: 5vw;
+            height: 5vw;
             background-color: gray;
             position: absolute;
             top: 0;
-            transition: top 0.2s ease; /* 添加过渡效果 */
+            transition: top 0.2s ease;
         }
 
         /* 得分样式 */
@@ -71,16 +71,14 @@
     </div>
 
     <script>
-        // 游戏状态对象
         const gameState = {
             score: 0,
             isGameOver: false,
-            playerX: 285,
+            playerX: 45,
             meteorSpeed: 3,
             activeMeteors: new Set()
         };
 
-        // 获取DOM元素
         const elements = {
             player: document.getElementById('player'),
             gameArea: document.getElementById('gameArea'),
@@ -89,7 +87,6 @@
             finalScore: document.getElementById('finalScore')
         };
 
-        // 精确碰撞检测函数
         function checkCollision(meteor) {
             const playerRect = elements.player.getBoundingClientRect();
             const meteorRect = meteor.getBoundingClientRect();
@@ -100,26 +97,22 @@
                 meteorRect.left > playerRect.right);
         }
 
-        // 移动玩家函数
-        function movePlayer(key) {
+        function movePlayer(newX) {
             if (gameState.isGameOver) return;
 
             const speed = 20;
-            const newPosition = key === 'ArrowLeft'?
-                Math.max(0, gameState.playerX - speed) :
-                Math.min(570, gameState.playerX + speed);
+            const newPosition = Math.max(0, Math.min(90, newX));
 
             gameState.playerX = newPosition;
-            elements.player.style.left = `${newPosition}px`;
+            elements.player.style.left = `${newPosition}vw`;
         }
 
-        // 生成陨石函数
         function createMeteor() {
             if (gameState.isGameOver) return;
 
             const meteor = document.createElement('div');
-            meteor.className ='meteor';
-            meteor.style.left = `${Math.random() * (elements.gameArea.clientWidth - 20)}px`;
+            meteor.className = 'meteor';
+            meteor.style.left = `${Math.random() * (90 - 5)}vw`;
             elements.gameArea.appendChild(meteor);
 
             let meteorY = 0;
@@ -133,20 +126,18 @@
                 }
 
                 meteorY += gameState.meteorSpeed;
-                meteor.style.top = `${meteorY}px`;
+                meteor.style.top = `${meteorY}vw`;
 
-                // 精确碰撞检测
                 if (checkCollision(meteor)) {
                     gameOver();
                     return;
                 }
 
-                // 移除超出屏幕的陨石
-                if (meteorY > elements.gameArea.clientHeight) {
+                if (meteorY > 100) {
                     meteor.remove();
                     gameState.score += 10;
                     elements.scoreElement.textContent = `得分: ${gameState.score}`;
-                    gameState.meteorSpeed += 0.05; // 减缓速度增加
+                    gameState.meteorSpeed += 0.05;
                     gameState.activeMeteors.delete(meteorId);
                 } else {
                     requestAnimationFrame(animate);
@@ -155,50 +146,55 @@
             requestAnimationFrame(animate);
         }
 
-        // 改进的游戏结束处理
         function gameOver() {
             gameState.isGameOver = true;
             elements.gameOverScreen.style.display = 'block';
             elements.finalScore.textContent = gameState.score;
 
-            // 清除所有陨石
             document.querySelectorAll('.meteor').forEach(meteor => meteor.remove());
             gameState.activeMeteors.clear();
         }
 
-        // 重置游戏
         function resetGame() {
             gameState.score = 0;
             gameState.meteorSpeed = 3;
-            gameState.playerX = 285;
+            gameState.playerX = 45;
             gameState.isGameOver = false;
 
             elements.scoreElement.textContent = '得分: 0';
-            elements.player.style.left = '285px';
+            elements.player.style.left = '45vw';
             elements.gameOverScreen.style.display = 'none';
 
-            // 重新开始生成陨石
             meteorInterval = setInterval(createMeteor, 1500);
         }
 
-        // 启动游戏
         let meteorInterval = setInterval(createMeteor, 1500);
 
-        // 窗口失焦时暂停游戏
-        window.addEventListener('blur', () => {
-            clearInterval(meteorInterval);
-        });
+        window.addEventListener('blur', () => clearInterval(meteorInterval));
         window.addEventListener('focus', () => {
             if (!gameState.isGameOver) {
                 meteorInterval = setInterval(createMeteor, 1500);
             }
         });
 
-        // 键盘事件监听
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                movePlayer(e.key);
-            }
+            if (e.key === 'ArrowLeft') movePlayer(gameState.playerX - 5);
+            if (e.key === 'ArrowRight') movePlayer(gameState.playerX + 5);
+        });
+
+        let touchStartX = 0;
+        elements.gameArea.addEventListener('touchstart', (e) => {
+            if (gameState.isGameOver) return;
+            touchStartX = e.touches[0].clientX;
+        });
+
+        elements.gameArea.addEventListener('touchend', (e) => {
+            if (gameState.isGameOver) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const deltaX = touchEndX - touchStartX;
+
+            if (deltaX > 50) movePlayer(gameState.playerX + 5);
+            if (deltaX < -50) movePlayer(gameState.playerX - 5);
         });
     </script>
 </body>
