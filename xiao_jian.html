@@ -57,6 +57,7 @@
             z-index: 100;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 </head>
 
 <body>
@@ -100,11 +101,12 @@
         function movePlayer(newX) {
             if (gameState.isGameOver) return;
 
+            const gameAreaWidth = elements.gameArea.clientWidth;
             const speed = 20;
-            const newPosition = Math.max(0, Math.min(90, newX));
+            const newPosition = Math.max(0, Math.min(gameAreaWidth - 5 * gameAreaWidth / 100, newX * gameAreaWidth / 100));
 
             gameState.playerX = newPosition;
-            elements.player.style.left = `${newPosition}vw`;
+            elements.player.style.left = `${newPosition}px`;
         }
 
         function createMeteor() {
@@ -112,7 +114,9 @@
 
             const meteor = document.createElement('div');
             meteor.className = 'meteor';
-            meteor.style.left = `${Math.random() * (90 - 5)}vw`;
+
+            const gameAreaWidth = elements.gameArea.clientWidth;
+            meteor.style.left = `${Math.random() * (gameAreaWidth - 5 * gameAreaWidth / 100)}px`;
             elements.gameArea.appendChild(meteor);
 
             let meteorY = 0;
@@ -126,14 +130,14 @@
                 }
 
                 meteorY += gameState.meteorSpeed;
-                meteor.style.top = `${meteorY}vw`;
+                meteor.style.top = `${meteorY}px`;
 
                 if (checkCollision(meteor)) {
                     gameOver();
                     return;
                 }
 
-                if (meteorY > 100) {
+                if (meteorY > elements.gameArea.clientHeight) {
                     meteor.remove();
                     gameState.score += 10;
                     elements.scoreElement.textContent = `得分: ${gameState.score}`;
@@ -162,7 +166,7 @@
             gameState.isGameOver = false;
 
             elements.scoreElement.textContent = '得分: 0';
-            elements.player.style.left = '45vw';
+            elements.player.style.left = 'calc(45vw - 2.5vw)';
             elements.gameOverScreen.style.display = 'none';
 
             meteorInterval = setInterval(createMeteor, 1500);
@@ -182,19 +186,16 @@
             if (e.key === 'ArrowRight') movePlayer(gameState.playerX + 5);
         });
 
-        let touchStartX = 0;
-        elements.gameArea.addEventListener('touchstart', (e) => {
-            if (gameState.isGameOver) return;
-            touchStartX = e.touches[0].clientX;
-        });
+        const hammerManager = new Hammer(elements.gameArea);
 
-        elements.gameArea.addEventListener('touchend', (e) => {
+        hammerManager.on('swipeleft swiperight', (event) => {
             if (gameState.isGameOver) return;
-            const touchEndX = e.changedTouches[0].clientX;
-            const deltaX = touchEndX - touchStartX;
 
-            if (deltaX > 50) movePlayer(gameState.playerX + 5);
-            if (deltaX < -50) movePlayer(gameState.playerX - 5);
+            if (event.type === 'swipeleft') {
+                movePlayer(gameState.playerX - 5);
+            } else if (event.type === 'swiperight') {
+                movePlayer(gameState.playerX + 5);
+            }
         });
     </script>
 </body>
